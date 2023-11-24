@@ -1,11 +1,11 @@
 import torch
-from diffusers import LCMScheduler, AutoPipelineForText2Image
+from diffusers import LCMScheduler, AutoPipelineForImage2Image
 
 
 def build_pipeline():
     from . import disabled_safety_checker
 
-    pipe = AutoPipelineForText2Image.from_pretrained(
+    pipe = AutoPipelineForImage2Image.from_pretrained(
         "Lykon/dreamshaper-7",
         torch_dtype=torch.float16,
         variant="fp16",
@@ -21,7 +21,7 @@ def build_pipeline():
     pipe.fuse_lora()
 
     return pipe, {
-        "num_inference_steps": 4,
+        "num_inference_steps": 5,
         "guidance_scale": 1,
-        "strength": 0.6,
+        "strength": 0.8,
     }
