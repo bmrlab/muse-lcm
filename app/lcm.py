@@ -31,7 +31,6 @@ async def generate(req: GenerateRequest):
     pil_img = load_image(get_image_from_base64(req.image_base64))
 
     if cached_prompt_embedding is None or req.prompt != cached_prompt:
-        print("regenerate prompt embedding")
         # tokenize the prompt
         prompt_inputs = pipeline.tokenizer(
             req.prompt, return_tensors="pt", padding="max_length"
