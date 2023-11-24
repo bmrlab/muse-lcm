@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
 from app.pipelines import load_default_pipeline
-from app.system import refresh_access_time, validate_token
+from app.system import validate_token
 from app.utils.image import get_base64_from_image, get_image_from_base64
 
 router = APIRouter()
@@ -24,16 +24,10 @@ class GenerateRequest(BaseModel):
 
 @router.post("/generate", dependencies=[Depends(validate_token)])
 async def generate(req: GenerateRequest):
-    # refresh token
-    refresh_access_time()
-
     pil_img = load_image(get_image_from_base64(req.image_base64))
     image = pipeline(req.prompt, image=pil_img, **default_params).images[0]
 
     base64_string = get_base64_from_image(image)
-
-    # refresh token
-    refresh_access_time()
 
     return {"result": base64_string}
 

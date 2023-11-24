@@ -1,7 +1,7 @@
 import os
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, HTTPException, status, Header
+from fastapi import APIRouter, HTTPException, status, Header, Depends
 from jose import jwt
 
 router = APIRouter()
@@ -68,3 +68,10 @@ async def get_token():
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED, detail="No token available"
     )
+
+
+@router.get("/refresh", dependencies=[Depends(validate_token)])
+async def refresh_token():
+    refresh_access_time()
+
+    return {"message": "success"}
