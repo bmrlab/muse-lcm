@@ -1,3 +1,4 @@
+import time
 from typing import Optional
 
 from diffusers.utils import load_image
@@ -28,6 +29,8 @@ class GenerateRequest(BaseModel):
 async def generate(req: GenerateRequest):
     global pipeline, default_params, cached_prompt, cached_prompt_embedding
 
+    start_time = time.time()
+
     pil_img = load_image(get_image_from_base64(req.image_base64))
 
     if cached_prompt_embedding is None or req.prompt != cached_prompt:
@@ -48,6 +51,11 @@ async def generate(req: GenerateRequest):
     ).images[0]
 
     base64_string = get_base64_from_image(image)
+
+    end_time = time.time()
+    duration = end_time - start_time
+
+    print(f"time: {duration}s, prompt: {req.prompt}")
 
     return {"result": base64_string}
 

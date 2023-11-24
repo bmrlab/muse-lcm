@@ -20,11 +20,11 @@ def build_pipeline():
     )
     pipe.fuse_lora()
 
-    pipe.unet.to(memory_format=torch.channels_last)
-    try:
-        pipe.unet = torch.compile(pipe.unet, mode="reduce-overhead", fullgraph=True)
-    except Exception as e:
-        print(f"failed to compile unet: {e}")
+    # pipe.unet.to(memory_format=torch.channels_last)
+    # try:
+    #     pipe.unet = torch.compile(pipe.unet, mode="reduce-overhead", fullgraph=True)
+    # except Exception as e:
+    #     print(f"failed to compile unet: {e}")
 
     return pipe, {
         "num_inference_steps": 5,
