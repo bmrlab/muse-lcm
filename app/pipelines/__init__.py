@@ -1,8 +1,6 @@
 from . import sd15_lcm_lora
 import os
 
-MODEL_BASE_PATH = os.environ.get("MODEL_BASE_PATH", "./models/diffusers")
-
 
 def load_default_pipeline():
     return sd15_lcm_lora.build_pipeline()
