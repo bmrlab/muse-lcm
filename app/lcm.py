@@ -11,6 +11,8 @@ from app.utils.image import get_base64_from_image, get_image_from_base64
 router = APIRouter()
 
 pipeline, default_params = load_default_pipeline()
+cached_prompt = ""
+cached_prompt_embedding = None
 
 
 class PipelineRequest(BaseModel):
@@ -24,8 +26,27 @@ class GenerateRequest(BaseModel):
 
 @router.post("/generate", dependencies=[Depends(validate_token)])
 async def generate(req: GenerateRequest):
+    global pipeline, default_params, cached_prompt, cached_prompt_embedding
+
     pil_img = load_image(get_image_from_base64(req.image_base64))
-    image = pipeline(req.prompt, image=pil_img, **default_params).images[0]
+
+    if cached_prompt_embedding is None or req.prompt != cached_prompt:
+        print("regenerate prompt embedding")
+        # tokenize the prompt
+        prompt_inputs = pipeline.tokenizer(
+            req.prompt, return_tensors="pt", padding="max_length"
+        ).to("cuda")
+        # create prompt encoding
+        prompt_embeds = pipeline.text_encoder(**prompt_inputs)
+        # extract CLIP embedding
+        prompt_embeds = prompt_embeds["last_hidden_state"]
+
+        cached_prompt_embedding = prompt_embeds
+        cached_prompt = req.prompt
+
+    image = pipeline(
+        image=pil_img, prompt_embeds=cached_prompt_embedding, **default_params
+    ).images[0]
 
     base64_string = get_base64_from_image(image)
 
