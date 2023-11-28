@@ -79,18 +79,20 @@ async def generate(req: GenerateRequest):
 async def websocket_endpoint(websocket: WebSocket, token: str):
     if token is None or len(token) == 0:
         print("no token valid")
-        raise WebSocketException(code=401, reason="invalid token")
-
-    try:
-        validate_token(token=token)
-    except Exception:
-        print("invalid token")
-        raise WebSocketException(code=401, reason="invalid token")
+        raise WebSocketException(code=401, reason="token should be provided")
 
     await manager.connect(websocket)
     try:
         while True:
             data = await websocket.receive_json()
+
+            try:
+                validate_token(token=token)
+            except Exception:
+                print("invalid token")
+                await manager.disconnect(websocket)
+                break
+
             await manager.send_personal_json(
                 {"result": handle_request(data["image_base64"], data["prompt"])},
                 websocket,
