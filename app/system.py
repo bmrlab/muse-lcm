@@ -13,7 +13,7 @@ ALGORITHM = "HS256"
 SECRET_KEY = os.environ.get("SECRET_KEY", "secret key")
 
 
-def validate_token(authorization: str = Header()):
+def validate_token(authorization: str | None = Header(), token: str | None = None):
     global current_token, last_access_time
 
     if current_token is None or last_access_time is None:
@@ -21,16 +21,18 @@ def validate_token(authorization: str = Header()):
             status_code=status.HTTP_401_UNAUTHORIZED, detail="No token available"
         )
 
+    # 检查令牌是否匹配
+    if (token is not None and token != current_token) or (
+        token is None and authorization != f"Bearer {current_token}"
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
+        )
+
     # 检查令牌是否过期
     if datetime.now() - last_access_time > timedelta(minutes=1):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired"
-        )
-
-    # 检查令牌是否匹配
-    if authorization != f"Bearer {current_token}":
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
         )
 
 
