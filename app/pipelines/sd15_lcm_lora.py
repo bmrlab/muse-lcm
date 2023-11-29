@@ -14,20 +14,11 @@ def build_pipeline():
     pipe.vae = AutoencoderTiny.from_pretrained(
         "madebyollin/taesd", torch_dtype=torch.float16
     )
+    # load and fuse lcm lora
+    pipe.load_lora_weights("latent-consistency/lcm-lora-sdv1-5")
+    pipe.fuse_lora()
     pipe.to("cuda")
     pipe.safety_checker = disabled_safety_checker
-
-    # load and fuse lcm lora
-    pipe.load_lora_weights(
-        "latent-consistency/lcm-lora-sdv1-5"
-    )
-    pipe.fuse_lora()
-
-    # pipe.unet.to(memory_format=torch.channels_last)
-    # try:
-    #     pipe.unet = torch.compile(pipe.unet, mode="reduce-overhead", fullgraph=True)
-    # except Exception as e:
-    #     print(f"failed to compile unet: {e}")
 
     pipe.set_progress_bar_config(disable=True)
 

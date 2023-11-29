@@ -26,6 +26,11 @@ def build_pipeline():
     except Exception as e:
         print(f"failed to compile unet: {e}")
 
+    try:
+        pipe.vae = torch.compile(pipe.vae, mode="reduce-overhead", fullgraph=True)
+    except Exception as e:
+        print(f"failed to compile vae: {e}")
+
     pipe.set_progress_bar_config(disable=True)
 
     return pipe, {
