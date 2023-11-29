@@ -1,3 +1,4 @@
+import importlib
 import time
 
 from diffusers.utils import load_image
@@ -103,4 +104,10 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
 
 @router.post("/update_pipeline")
 async def update_pipeline(req: PipelineRequest):
-    pass
+    global pipeline, default_params
+
+    try:
+        pipeline_module = importlib.import_module(f"app.pipelines.{req.pipeline}")
+        pipeline, default_params = pipeline_module.build_pipeline()
+    except Exception as e:
+        print(f"failed to update pipeline{req.pipeline}: {e}")
