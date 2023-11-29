@@ -1,5 +1,5 @@
 import torch
-from diffusers import LCMScheduler, AutoPipelineForImage2Image
+from diffusers import LCMScheduler, AutoPipelineForImage2Image, AutoencoderTiny
 
 
 def build_pipeline():
@@ -11,20 +11,22 @@ def build_pipeline():
         variant="fp16",
     )
     pipe.scheduler = LCMScheduler.from_config(pipe.scheduler.config)
+    # load and fuse lcm lora
+    pipe.load_lora_weights("latent-consistency/lcm-lora-sdv1-5")
+    pipe.fuse_lora()
+    pipe.vae = AutoencoderTiny.from_pretrained(
+        "madebyollin/taesd", torch_dtype=torch.float16
+    )
     pipe.to("cuda")
     pipe.safety_checker = disabled_safety_checker
-
-    # load and fuse lcm lora
-    pipe.load_lora_weights(
-        "latent-consistency/lcm-lora-sdv1-5"
-    )
-    pipe.fuse_lora()
 
     pipe.unet.to(memory_format=torch.channels_last)
     try:
         pipe.unet = torch.compile(pipe.unet, mode="reduce-overhead", fullgraph=True)
     except Exception as e:
         print(f"failed to compile unet: {e}")
+
+    pipe.set_progress_bar_config(disable=True)
 
     return pipe, {
         "num_inference_steps": 5,

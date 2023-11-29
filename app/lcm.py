@@ -41,24 +41,21 @@ def handle_request(image_base64: str, prompt: str):
 
     pil_img = load_image(get_image_from_base64(image_base64))
 
-    # if cached_prompt_embedding is None or prompt != cached_prompt:
-    #     # tokenize the prompt
-    #     prompt_inputs = pipeline.tokenizer(
-    #         prompt, return_tensors="pt", padding="max_length"
-    #     ).to("cuda")
-    #     # create prompt encoding
-    #     prompt_embeds = pipeline.text_encoder(**prompt_inputs)
-    #     # extract CLIP embedding
-    #     prompt_embeds = prompt_embeds["last_hidden_state"]
+    if cached_prompt_embedding is None or prompt != cached_prompt:
+        # tokenize the prompt
+        prompt_embedding, _ = pipeline.encode_prompt(
+            device="cuda",
+            prompt=prompt,
+            do_classifier_free_guidance=False,
+            num_images_per_prompt=1,
+        )
 
-    #     cached_prompt_embedding = prompt_embeds
-    #     cached_prompt = prompt
+        cached_prompt_embedding = prompt_embedding
+        cached_prompt = prompt
 
-    # image = pipeline(
-    #     image=pil_img, prompt_embeds=cached_prompt_embedding, **default_params
-    # ).images[0]
-
-    image = pipeline(prompt=prompt, image=pil_img, **default_params).images[0]
+    image = pipeline(
+        image=pil_img, prompt_embeds=cached_prompt_embedding, **default_params
+    ).images[0]
 
     base64_string = get_base64_from_image(image)
 
