@@ -1,9 +1,10 @@
 from . import sd15_lcm_lora
-import os
+from PIL import Image
 
 
 def load_default_pipeline():
     return sd15_lcm_lora.build_pipeline()
+
 
 def disabled_safety_checker(images, clip_input):
     if len(images.shape) == 4:

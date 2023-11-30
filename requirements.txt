@@ -3,6 +3,6 @@ pydantic==2.4.2
 pydantic_core==2.10.1
 uvicorn[standard]==0.23.2
 python-jose
-diffusers==0.23.1
+diffusers==0.24.0
 transformers==4.35.2
 Pillow==10.1.0

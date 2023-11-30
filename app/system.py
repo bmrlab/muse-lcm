@@ -77,3 +77,11 @@ async def refresh_token():
     refresh_access_time()
 
     return {"message": "success"}
+
+
+@router.post("/disconnect", dependencies=[Depends(validate_token)])
+async def invalidate_token():
+    global current_token, last_access_time
+    current_token = None
+    last_access_time = None
+    return {"message": "success"}
