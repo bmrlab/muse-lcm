@@ -100,12 +100,12 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                 await manager.disconnect(websocket)
                 break
 
+            result = handle_request(
+                data["image_base64"], data["prompt"], data.get("call_args", {})
+            )
+
             await manager.send_personal_json(
-                {
-                    "result": handle_request(
-                        data["image_base64"], data["prompt"], data.get("call_args", {})
-                    )
-                },
+                {"result": result},
                 websocket,
             )
     except WebSocketDisconnect:

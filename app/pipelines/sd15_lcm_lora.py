@@ -33,11 +33,25 @@ def build_pipeline(build_args: dict):
         except Exception as e:
             print(f"failed to compile unet: {e}")
 
+    if build_args.get("compile_unet_oneflow", False):
+        try:
+            from onediff.infer_compiler import oneflow_compile
+            pipe.unet = oneflow_compile(pipe.unet)
+        except Exception as e:
+            print(f"failed to compile unet with oneflow: {e}")
+
     if build_args.get("compile_vae", False):
         try:
             pipe.vae = torch.compile(pipe.vae, mode="reduce-overhead", fullgraph=True)
         except Exception as e:
             print(f"failed to compile vae: {e}")
+
+    if build_args.get("compile_vae_oneflow", False):
+        try:
+            from onediff.infer_compiler import oneflow_compile
+            pipe.vae = oneflow_compile(pipe.vae)
+        except Exception as e:
+            print(f"failed to compile vae with oneflow: {e}")
 
     pipe.set_progress_bar_config(disable=True)
 
