@@ -1,5 +1,5 @@
 import torch
-from diffusers import AutoPipelineForImage2Image, AutoencoderTiny
+from diffusers import AutoPipelineForImage2Image, AutoencoderTiny, AutoencoderKL
 
 
 def build_pipeline(build_args: dict):
@@ -19,6 +19,10 @@ def build_pipeline(build_args: dict):
         pipe.vae = AutoencoderTiny.from_pretrained(
             "madebyollin/taesdxl", torch_dtype=torch.float16
         )
+
+    if build_args.get("use_fp16_vae", False):
+        # use this can save time for precision cast
+        pipe.vae = AutoencoderKL.from_pretrained("madebyollin/sdxl-vae-fp16-fix", torch_dtype=torch.float16)
 
     pipe.set_progress_bar_config(disable=True)
     # diffusers suggest enable this to avoid dtype conversion
