@@ -6,9 +6,11 @@ def build_pipeline(build_args: dict):
     if build_args is None:
         build_args = {}
 
+    torch.set_grad_enabled(False)
     # refer to https://pytorch.org/docs/stable/notes/cuda.html#tensorfloat-32-tf32-on-ampere-devices
     # this will make float32 matmul faster
     torch.backends.cuda.matmul.allow_tf32 = True
+    torch.backends.cudnn.allow_tf32 = True
 
     pipe = AutoPipelineForImage2Image.from_pretrained(
         "Lykon/dreamshaper-7",
@@ -66,6 +68,14 @@ def build_pipeline(build_args: dict):
                 print("xformers not installed, skip")
 
         config.enable_cuda_graph = True
+
+        config.enable_jit = True
+        config.enable_jit_freeze = True
+        config.trace_scheduler = True
+        config.enable_cnn_optimization = True
+        config.preserve_parameters = False
+        config.prefer_lowp_gemm = True
+
         pipe = compile(pipe, config)
 
     default_params = build_args.get(

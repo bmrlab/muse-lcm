@@ -41,9 +41,9 @@ class GenerateRequest(BaseModel):
 def handle_request(image_base64: str, prompt: str, call_args: dict):
     global pipeline, default_params, cached_prompt, cached_prompt_embedding
 
-    start_time = time.time()
-
     pil_img = load_image(get_image_from_base64(image_base64))
+
+    start_time = time.time()
 
     if call_args.get("use_prompt_cache", False):
         if cached_prompt_embedding is None or prompt != cached_prompt:
@@ -62,14 +62,19 @@ def handle_request(image_base64: str, prompt: str, call_args: dict):
             image=pil_img, prompt_embeds=cached_prompt_embedding, **default_params
         ).images[0]
     else:
-        image = pipeline(image=pil_img, prompt=prompt, **default_params).images[0]
-
-    base64_string = get_base64_from_image(image)
+        image = pipeline(
+            image=pil_img,
+            prompt=prompt,
+            output_type="pil",
+            return_dict=False,
+            **default_params,
+        )[0]
 
     end_time = time.time()
     duration = end_time - start_time
-
     print(f"time: {duration}s, prompt: {prompt}")
+
+    base64_string = get_base64_from_image(image)
 
     return base64_string
 
