@@ -3,7 +3,15 @@ from PIL import Image
 
 
 def load_default_pipeline():
-    return sd15_lcm_lora.build_pipeline({})
+    return sd15_lcm_lora.build_pipeline(
+        {
+            "use_stablefast": True,
+            "use_triton": True,
+            "use_xformers": True,
+            "sfast_tracetrace_scheduler": True,
+            "sfast_preserve_parameters": True,
+        }
+    )
 
 
 def disabled_safety_checker(images, clip_input):

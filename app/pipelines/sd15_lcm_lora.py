@@ -69,12 +69,12 @@ def build_pipeline(build_args: dict):
 
         config.enable_cuda_graph = True
 
-        config.enable_jit = True
-        config.enable_jit_freeze = True
-        config.trace_scheduler = True
-        config.enable_cnn_optimization = True
-        config.preserve_parameters = False
-        config.prefer_lowp_gemm = True
+        # config.enable_jit = True
+        # config.enable_jit_freeze = True
+        config.trace_scheduler = build_args.get("sfast_tracetrace_scheduler", False)
+        # config.enable_cnn_optimization = True
+        config.preserve_parameters = build_args.get("sfast_preserve_parameters", False)
+        # config.prefer_lowp_gemm = True
 
         pipe = compile(pipe, config)
 
