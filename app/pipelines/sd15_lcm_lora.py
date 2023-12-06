@@ -24,7 +24,11 @@ def build_pipeline(build_args: dict):
         )
 
     pipe.to("cuda")
-    pipe.safety_checker = disabled_safety_checker
+
+    if build_args.get("safety_checker_none", False):
+        pipe.safety_checker = None
+    else:
+        pipe.safety_checker = disabled_safety_checker
 
     if build_args.get("compile_unet", False):
         pipe.unet.to(memory_format=torch.channels_last)
