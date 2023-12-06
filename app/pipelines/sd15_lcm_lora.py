@@ -3,8 +3,6 @@ from diffusers import LCMScheduler, AutoPipelineForImage2Image, AutoencoderTiny
 
 
 def build_pipeline(build_args: dict):
-    from . import disabled_safety_checker
-
     if build_args is None:
         build_args = {}
 
@@ -23,47 +21,52 @@ def build_pipeline(build_args: dict):
             "madebyollin/taesd", torch_dtype=torch.float16
         )
 
+    pipe.safety_checker = None
+    pipe.set_progress_bar_config(disable=True)
     pipe.to("cuda")
 
-    if build_args.get("safety_checker_none", False):
-        pipe.safety_checker = None
-    else:
-        pipe.safety_checker = disabled_safety_checker
-
-    if build_args.get("compile_unet", False):
+    if build_args.get("use_torch_compile", False):
         pipe.unet.to(memory_format=torch.channels_last)
         try:
             pipe.unet = torch.compile(pipe.unet, mode="reduce-overhead", fullgraph=True)
         except Exception as e:
             print(f"failed to compile unet: {e}")
 
-    if build_args.get("compile_unet_oneflow", False):
-        try:
-            from onediff.infer_compiler import oneflow_compile
-            pipe.unet = oneflow_compile(pipe.unet)
-        except Exception as e:
-            print(f"failed to compile unet with oneflow: {e}")
-
-    if build_args.get("compile_vae", False):
         try:
             pipe.vae = torch.compile(pipe.vae, mode="reduce-overhead", fullgraph=True)
         except Exception as e:
             print(f"failed to compile vae: {e}")
 
-    if build_args.get("compile_vae_oneflow", False):
-        try:
-            from onediff.infer_compiler import oneflow_compile
-            pipe.vae = oneflow_compile(pipe.vae)
-        except Exception as e:
-            print(f"failed to compile vae with oneflow: {e}")
+    if build_args.get("use_stablefast", False):
+        from sfast.compilers.stable_diffusion_pipeline_compiler import (
+            CompilationConfig,
+            compile,
+        )
 
-    pipe.set_progress_bar_config(disable=True)
+        config = CompilationConfig.Default()
+
+        try:
+            import triton
+
+            config.enable_triton = True
+        except ImportError:
+            print("Triton not installed, skip")
+
+        try:
+            import xformers
+
+            config.enable_xformers = True
+        except ImportError:
+            print("xformers not installed, skip")
+
+        config.enable_cuda_graph = True
+        pipe = compile(pipe, config)
 
     default_params = build_args.get(
         "default_params",
         {
             "num_inference_steps": 5,
-            "guidance_scale": 1,
+            "guidance_scale": 0,
             "strength": 0.8,
         },
     )
