@@ -6,6 +6,10 @@ def build_pipeline(build_args: dict):
     if build_args is None:
         build_args = {}
 
+    # refer to https://pytorch.org/docs/stable/notes/cuda.html#tensorfloat-32-tf32-on-ampere-devices
+    # this will make float32 matmul faster
+    torch.backends.cuda.matmul.allow_tf32 = True
+
     pipe = AutoPipelineForImage2Image.from_pretrained(
         "Lykon/dreamshaper-7",
         torch_dtype=torch.float16,
@@ -45,19 +49,21 @@ def build_pipeline(build_args: dict):
 
         config = CompilationConfig.Default()
 
-        try:
-            import triton
+        if build_args.get("use_triton", False):
+            try:
+                import triton
 
-            config.enable_triton = True
-        except ImportError:
-            print("Triton not installed, skip")
+                config.enable_triton = True
+            except ImportError:
+                print("Triton not installed, skip")
 
-        try:
-            import xformers
+        if build_args.get("use_xformers", False):
+            try:
+                import xformers
 
-            config.enable_xformers = True
-        except ImportError:
-            print("xformers not installed, skip")
+                config.enable_xformers = True
+            except ImportError:
+                print("xformers not installed, skip")
 
         config.enable_cuda_graph = True
         pipe = compile(pipe, config)

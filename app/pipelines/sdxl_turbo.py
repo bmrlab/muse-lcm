@@ -3,47 +3,72 @@ from diffusers import AutoPipelineForImage2Image, AutoencoderTiny
 
 
 def build_pipeline(build_args: dict):
-    from . import disabled_safety_checker
-
     if build_args is None:
         build_args = {}
+
+    # refer to https://pytorch.org/docs/stable/notes/cuda.html#tensorfloat-32-tf32-on-ampere-devices
+    # this will make float32 matmul faster
+    torch.backends.cuda.matmul.allow_tf32 = True
 
     pipe = AutoPipelineForImage2Image.from_pretrained(
         "stabilityai/sdxl-turbo", torch_dtype=torch.float16, variant="fp16"
     )
+    pipe.safety_checker = None
 
     if build_args.get("use_tiny_vae", False):
         pipe.vae = AutoencoderTiny.from_pretrained(
             "madebyollin/taesdxl", torch_dtype=torch.float16
         )
 
+    pipe.set_progress_bar_config(disable=True)
+    # diffusers suggest enable this to avoid dtype conversion
+    pipe.upcast_vae()
     pipe.to("cuda")
-    pipe.safety_checker = disabled_safety_checker
 
-    if build_args.get("compile_unet", False):
+    if build_args.get("use_torch_compile", False):
         pipe.unet.to(memory_format=torch.channels_last)
         try:
             pipe.unet = torch.compile(pipe.unet, mode="reduce-overhead", fullgraph=True)
         except Exception as e:
             print(f"failed to compile unet: {e}")
-
-    if build_args.get("compile_vae", False):
         try:
             pipe.vae = torch.compile(pipe.vae, mode="reduce-overhead", fullgraph=True)
         except Exception as e:
             print(f"failed to compile vae: {e}")
 
-    pipe.set_progress_bar_config(disable=True)
+    if build_args.get("use_stablefast", False):
+        from sfast.compilers.stable_diffusion_pipeline_compiler import (
+            CompilationConfig,
+            compile,
+        )
 
-    # diffusers suggest enable this to avoid dtype conversion
-    pipe.upcast_vae()
+        config = CompilationConfig.Default()
+
+        if build_args.get("use_triton", False):
+            try:
+                import triton
+
+                config.enable_triton = True
+            except ImportError:
+                print("Triton not installed, skip")
+
+        if build_args.get("use_xformers", False):
+            try:
+                import xformers
+
+                config.enable_xformers = True
+            except ImportError:
+                print("xformers not installed, skip")
+
+        config.enable_cuda_graph = True
+        pipe = compile(pipe, config)
 
     default_params = build_args.get(
         "default_params",
         {
             "num_inference_steps": 2,
             "guidance_scale": 0.0,
-            "strength": 0.5,
+            "strength": 0.8,
         },
     )
 
