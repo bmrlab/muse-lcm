@@ -52,7 +52,7 @@ def build_pipeline(build_args: dict):
     config.enable_cuda_graph = True
     print("start compiling...")
     start_time = time.time()
-    pipe = compile(pipe)
+    pipe = compile(pipe, config)
     print(f"compiling finished in {time.time() - start_time}s")
 
     default_params = build_args.get(

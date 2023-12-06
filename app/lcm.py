@@ -122,4 +122,4 @@ async def update_pipeline(req: PipelineRequest):
 
         return {"status": "ok"}
     except Exception as e:
-        print(f"failed to update pipeline{req.pipeline}: {e}")
+        print(f"failed to update pipeline {req.pipeline}: {e}")
