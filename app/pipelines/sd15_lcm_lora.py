@@ -82,7 +82,7 @@ def build_pipeline(build_args: dict):
         "default_params",
         {
             "num_inference_steps": 5,
-            "guidance_scale": 0,
+            "guidance_scale": 1.0,
             "strength": 0.8,
         },
     )

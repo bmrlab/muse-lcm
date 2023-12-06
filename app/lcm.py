@@ -65,10 +65,8 @@ def handle_request(image_base64: str, prompt: str, call_args: dict):
         image = pipeline(
             image=pil_img,
             prompt=prompt,
-            output_type="pil",
-            return_dict=False,
             **default_params,
-        )[0]
+        ).images[0]
 
     end_time = time.time()
     duration = end_time - start_time
