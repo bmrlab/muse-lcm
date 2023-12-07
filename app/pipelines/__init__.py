@@ -8,8 +8,7 @@ def load_default_pipeline():
             "use_stablefast": True,
             "use_triton": True,
             "use_xformers": True,
-            "sfast_tracetrace_scheduler": True,
-            "sfast_preserve_parameters": True,
+            "use_tiny_vae": True,
         }
     )
 
