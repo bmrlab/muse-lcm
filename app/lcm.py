@@ -3,8 +3,13 @@ import time
 from typing import Optional
 
 from diffusers.utils import load_image
-from fastapi import (APIRouter, Depends, WebSocket, WebSocketDisconnect,
-                     WebSocketException)
+from fastapi import (
+    APIRouter,
+    Depends,
+    WebSocket,
+    WebSocketDisconnect,
+    WebSocketException,
+)
 from pydantic import BaseModel
 
 from app.pipelines import load_default_pipeline
@@ -40,14 +45,15 @@ def handle_request(image_base64: str, prompt: str, call_args: dict):
 
     start_time = time.time()
 
-    if call_args.get("use_translate", False):
-        try:
-            prompt = trans.translate(prompt)
-        except Exception as e:
-            print(f"failed to translate: {e}")
-
     if call_args.get("use_prompt_cache", False):
         if cached_prompt_embedding is None or prompt != cached_prompt:
+            original_prompt = prompt
+            if call_args.get("use_translate", False):
+                try:
+                    prompt = trans.translate(prompt)
+                except Exception as e:
+                    print(f"failed to translate: {e}")
+
             # tokenize the prompt
             prompt_embedding, _ = pipeline.encode_prompt(
                 device="cuda",
@@ -57,12 +63,18 @@ def handle_request(image_base64: str, prompt: str, call_args: dict):
             )
 
             cached_prompt_embedding = prompt_embedding
-            cached_prompt = prompt
+            cached_prompt = original_prompt
 
         image = pipeline(
             image=pil_img, prompt_embeds=cached_prompt_embedding, **default_params
         ).images[0]
     else:
+        if call_args.get("use_translate", False):
+            try:
+                prompt = trans.translate(prompt)
+            except Exception as e:
+                print(f"failed to translate: {e}")
+
         image = pipeline(
             image=pil_img,
             prompt=prompt,
