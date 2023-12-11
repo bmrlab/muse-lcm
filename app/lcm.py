@@ -77,7 +77,10 @@ def handle_request(image_base64: str, prompt: str, call_args: dict):
     return base64_string
 
 
-@router.post("/generate", dependencies=[Depends(validate_token)])
+@router.post(
+    "/generate",
+    #  dependencies=[Depends(validate_token)]
+)
 async def generate(req: GenerateRequest):
     base64_string = handle_request(req.image_base64, req.prompt, req.call_args)
     return {"result": base64_string}

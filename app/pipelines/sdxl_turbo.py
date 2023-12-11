@@ -29,7 +29,7 @@ def build_pipeline(build_args: dict):
 
     pipe.safety_checker = None
     pipe.set_progress_bar_config(disable=True)
-    if not build_args.get("use_tiny_vae", False):
+    if not build_args.get("use_tiny_vae", False) and not build_args.get("use_fp16_vae", False):
         # diffusers suggest enable this to avoid dtype conversion
         pipe.upcast_vae()
     pipe.to("cuda")
