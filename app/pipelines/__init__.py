@@ -8,7 +8,6 @@ def load_default_pipeline():
             "use_stablefast": True,
             "use_triton": True,
             "use_xformers": True,
-            "use_tiny_vae": True,
         }
     )
 

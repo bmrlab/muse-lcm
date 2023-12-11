@@ -1,21 +1,16 @@
 import importlib
 import time
+from typing import Optional
 
 from diffusers.utils import load_image
-from fastapi import (
-    APIRouter,
-    Depends,
-    WebSocket,
-    WebSocketDisconnect,
-    WebSocketException,
-)
+from fastapi import (APIRouter, Depends, WebSocket, WebSocketDisconnect,
+                     WebSocketException)
 from pydantic import BaseModel
-
-from typing import Optional
 
 from app.pipelines import load_default_pipeline
 from app.system import validate_token
 from app.utils.image import get_base64_from_image, get_image_from_base64
+from app.utils.translate import trans
 from app.utils.websockets import ConnectionManager
 
 router = APIRouter()
@@ -44,6 +39,12 @@ def handle_request(image_base64: str, prompt: str, call_args: dict):
     pil_img = load_image(get_image_from_base64(image_base64))
 
     start_time = time.time()
+
+    if call_args.get("use_translate", False):
+        try:
+            prompt = trans.translate(prompt)
+        except Exception as e:
+            print(f"failed to translate: {e}")
 
     if call_args.get("use_prompt_cache", False):
         if cached_prompt_embedding is None or prompt != cached_prompt:
@@ -79,6 +80,7 @@ def handle_request(image_base64: str, prompt: str, call_args: dict):
 
 @router.post(
     "/generate",
+    # FIXME disable temporarily
     #  dependencies=[Depends(validate_token)]
 )
 async def generate(req: GenerateRequest):
