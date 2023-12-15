@@ -1,12 +1,13 @@
 from fastapi import FastAPI, APIRouter
 from starlette.middleware.cors import CORSMiddleware
 
-from . import lcm, system
+from . import lcm, system, sdxl
 
 app = FastAPI()
 api_router = APIRouter()
 
 api_router.include_router(lcm.router, tags=["lcm"], prefix="/lcm")
+api_router.include_router(sdxl.router, tags=["sdxl"], prefix="/sdxl")
 api_router.include_router(system.router, tags=["system"], prefix="/system")
 
 

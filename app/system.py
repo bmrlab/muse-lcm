@@ -1,8 +1,13 @@
+import importlib
 import os
 from datetime import datetime, timedelta
+from typing import Optional
 
-from fastapi import APIRouter, HTTPException, status, Header, Depends
+from fastapi import APIRouter, Depends, Header, HTTPException, status
 from jose import jwt
+from pydantic import BaseModel
+
+from app.pipelines import load_default_pipeline
 
 router = APIRouter()
 
@@ -11,6 +16,13 @@ last_access_time = None
 
 ALGORITHM = "HS256"
 SECRET_KEY = os.environ.get("SECRET_KEY", "secret key")
+
+pipeline, default_params = load_default_pipeline()
+
+
+class PipelineRequest(BaseModel):
+    pipeline: str
+    build_args: Optional[dict] = {}
 
 
 def validate_token(authorization: str | None = Header(), token: str | None = None):
@@ -85,3 +97,16 @@ async def invalidate_token():
     current_token = None
     last_access_time = None
     return {"message": "success"}
+
+
+@router.post("/update_pipeline")
+async def update_pipeline(req: PipelineRequest):
+    global pipeline, default_params
+
+    try:
+        pipeline_module = importlib.import_module(f"app.pipelines.{req.pipeline}")
+        pipeline, default_params = pipeline_module.build_pipeline(req.build_args)
+
+        return {"status": "ok"}
+    except Exception as e:
+        print(f"failed to update pipeline {req.pipeline}: {e}")

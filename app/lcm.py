@@ -1,4 +1,3 @@
-import importlib
 import time
 from typing import Optional
 
@@ -12,24 +11,17 @@ from fastapi import (
 )
 from pydantic import BaseModel
 
-from app.pipelines import load_default_pipeline
-from app.system import validate_token
+from app.system import validate_token, pipeline, default_params
 from app.utils.image import get_base64_from_image, get_image_from_base64
 from app.utils.translate import trans
 from app.utils.websockets import ConnectionManager
 
 router = APIRouter()
 
-pipeline, default_params = load_default_pipeline()
 cached_prompt = ""
 cached_prompt_embedding = None
 
 manager = ConnectionManager()
-
-
-class PipelineRequest(BaseModel):
-    pipeline: str
-    build_args: Optional[dict] = {}
 
 
 class GenerateRequest(BaseModel):
@@ -39,7 +31,7 @@ class GenerateRequest(BaseModel):
 
 
 def handle_request(image_base64: str, prompt: str, call_args: dict):
-    global pipeline, default_params, cached_prompt, cached_prompt_embedding
+    global cached_prompt, cached_prompt_embedding
 
     pil_img = load_image(get_image_from_base64(image_base64))
 
@@ -130,16 +122,3 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
             )
     except WebSocketDisconnect:
         manager.disconnect(websocket)
-
-
-@router.post("/update_pipeline")
-async def update_pipeline(req: PipelineRequest):
-    global pipeline, default_params
-
-    try:
-        pipeline_module = importlib.import_module(f"app.pipelines.{req.pipeline}")
-        pipeline, default_params = pipeline_module.build_pipeline(req.build_args)
-
-        return {"status": "ok"}
-    except Exception as e:
-        print(f"failed to update pipeline {req.pipeline}: {e}")
