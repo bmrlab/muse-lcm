@@ -2,16 +2,12 @@ import time
 from typing import Optional
 
 from diffusers.utils import load_image
-from fastapi import (
-    APIRouter,
-    Depends,
-    WebSocket,
-    WebSocketDisconnect,
-    WebSocketException,
-)
+from fastapi import (APIRouter, Depends, WebSocket, WebSocketDisconnect,
+                     WebSocketException)
 from pydantic import BaseModel
 
-from app.system import validate_token, pipeline, default_params
+from app.pipelines import pipeline
+from app.system import validate_token
 from app.utils.image import get_base64_from_image, get_image_from_base64
 from app.utils.translate import trans
 from app.utils.websockets import ConnectionManager
@@ -47,7 +43,7 @@ def handle_request(image_base64: str, prompt: str, call_args: dict):
                     print(f"failed to translate: {e}")
 
             # tokenize the prompt
-            prompt_embedding, _ = pipeline.encode_prompt(
+            prompt_embedding, _ = pipeline.pipeline.encode_prompt(
                 device="cuda",
                 prompt=prompt,
                 do_classifier_free_guidance=False,
@@ -57,8 +53,10 @@ def handle_request(image_base64: str, prompt: str, call_args: dict):
             cached_prompt_embedding = prompt_embedding
             cached_prompt = original_prompt
 
-        image = pipeline(
-            image=pil_img, prompt_embeds=cached_prompt_embedding, **default_params
+        image = pipeline.pipeline(
+            image=pil_img,
+            prompt_embeds=cached_prompt_embedding,
+            **pipeline.default_params,
         ).images[0]
     else:
         if call_args.get("use_translate", False):
@@ -67,10 +65,10 @@ def handle_request(image_base64: str, prompt: str, call_args: dict):
             except Exception as e:
                 print(f"failed to translate: {e}")
 
-        image = pipeline(
+        image = pipeline.pipeline(
             image=pil_img,
             prompt=prompt,
-            **default_params,
+            **pipeline.default_params,
         ).images[0]
 
     end_time = time.time()

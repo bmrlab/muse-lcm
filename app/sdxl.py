@@ -4,7 +4,7 @@ from typing import Optional
 from fastapi import APIRouter
 from pydantic import BaseModel
 
-from app.system import default_params, pipeline
+from app.pipelines import pipeline
 from app.utils.image import get_base64_from_image
 from app.utils.websockets import ConnectionManager
 
@@ -26,16 +26,16 @@ class GenerateRequest(BaseModel):
 def handle_request(prompt: str, call_args: dict):
     start_time = time.time()
 
-    image = pipeline[0](
+    image = pipeline.pipeline[0](
         prompt=prompt,
-        num_inference_steps=default_params["num_inference_steps"],
-        denoising_end=default_params["denoising_end"],
+        num_inference_steps=pipeline.default_params["num_inference_steps"],
+        denoising_end=pipeline.default_params["denoising_end"],
         output_type="latent",
     ).images
-    image = pipeline[1](
+    image = pipeline.pipeline[1](
         prompt=prompt,
-        num_inference_steps=default_params["num_inference_steps"],
-        denoising_start=default_params["denoising_start"],
+        num_inference_steps=pipeline.default_params["num_inference_steps"],
+        denoising_start=pipeline.default_params["denoising_start"],
         image=image,
     ).images[0]
 

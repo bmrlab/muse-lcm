@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, status
 from jose import jwt
 from pydantic import BaseModel
 
-from app.pipelines import load_default_pipeline
+from app.pipelines import pipeline
 
 router = APIRouter()
 
@@ -16,8 +16,6 @@ last_access_time = None
 
 ALGORITHM = "HS256"
 SECRET_KEY = os.environ.get("SECRET_KEY", "secret key")
-
-pipeline, default_params = load_default_pipeline()
 
 
 class PipelineRequest(BaseModel):
@@ -101,11 +99,11 @@ async def invalidate_token():
 
 @router.post("/update_pipeline")
 async def update_pipeline(req: PipelineRequest):
-    global pipeline, default_params
-
     try:
         pipeline_module = importlib.import_module(f"app.pipelines.{req.pipeline}")
-        pipeline, default_params = pipeline_module.build_pipeline(req.build_args)
+        pipe, params = pipeline_module.build_pipeline(req.build_args)
+
+        pipeline.update(pipe, params)
 
         return {"status": "ok"}
     except Exception as e:
