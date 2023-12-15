@@ -31,12 +31,14 @@ def handle_request(prompt: str, call_args: dict):
         num_inference_steps=pipeline.default_params["num_inference_steps"],
         denoising_end=pipeline.default_params["denoising_end"],
         output_type="latent",
+        num_images_per_prompt=call_args.get("base_batch_size", 1)
     ).images
     image = pipeline.pipeline[1](
         prompt=prompt,
         num_inference_steps=pipeline.default_params["num_inference_steps"],
         denoising_start=pipeline.default_params["denoising_start"],
         image=image,
+        num_images_per_prompt=call_args.get("refiner_batch_size", 1)
     ).images[0]
 
     end_time = time.time()

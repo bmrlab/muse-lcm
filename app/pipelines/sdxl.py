@@ -20,8 +20,11 @@ def build_pipeline(build_args: dict):
     )
     base.enable_model_cpu_offload()
 
-    if build_args.get("use_torch_compile", False):
+    if build_args.get("base_unet_use_torch_compile", False):
         base.unet = torch.compile(base.unet, mode="reduce-overhead", fullgraph=True)
+
+    if build_args.get("base_vae_use_torch_compile", False):
+        base.vae = torch.compile(base.vae, mode="reduce-overhead", fullgraph=True)
 
     refiner = DiffusionPipeline.from_pretrained(
         "stabilityai/stable-diffusion-xl-refiner-1.0",
@@ -33,10 +36,11 @@ def build_pipeline(build_args: dict):
     )
     refiner.enable_model_cpu_offload()
 
-    if build_args.get("use_torch_compile", False):
-        refiner.unet = torch.compile(
-            refiner.unet, mode="reduce-overhead", fullgraph=True
-        )
+    if build_args.get("refiner_unet_use_torch_compile", False):
+        refiner.unet = torch.compile(refiner.unet, mode="reduce-overhead", fullgraph=True)
+
+    if build_args.get("refiner_vae_use_torch_compile", False):
+        refiner.vae = torch.compile(refiner.vae, mode="reduce-overhead", fullgraph=True)
 
     default_params = build_args.get(
         "default_params",
